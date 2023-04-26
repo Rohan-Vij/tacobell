@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Flask-SocketIO Test</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
+  <script>
+    // Connect to the server using SocketIO
+    const socket = io.connect('http://localhost:5000');
+
+    // Listen for status updates from the server
+    socket.on('status-update', (data) => {
+      // Update the status message on the page
+      const statusMessage = document.getElementById('status-message');
+      statusMessage.innerText = data.status;
+    });
+
+    // Start the task when the "Start Task" button is clicked
+    document.getElementById('start-task-button').addEventListener('click', () => {
+      fetch('/get_menus?latitude=37.8043514&longitude=-122.2711639')
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.error(error));
+    });
+  </script>
+</head>
+<body>
+  <h1>Flask-SocketIO Test</h1>
+  <button id="start-task-button">Start Task</button>
+  <p>Status: <span id="status-message">Waiting...</span></p>
+</body>
+</html>

@@ -43,7 +43,7 @@ class TacoBellInterface:
 
         :param meta_data: The meta data for the store.
 
-        :return: A confirmation message.
+        :return: The store's menu.
         """
         urls = ["breakfast", "tacos", "deals-and-combos", "online-exclusives", "new",
                 "burritos", "specialties", "sides-sweets", "cravings-value-menu", 
@@ -67,8 +67,8 @@ class TacoBellInterface:
 
             for item in items:
                 item_name = item.find('h4').text
-                item_link = item.find(
-                    'a', {'class': 'styles_product-title__6KCyw'}).get('href')
+                item_link = "https://www.tacobell.com" + str(item.find(
+                    'a', {'class': 'styles_product-title__6KCyw'}).get('href'))
 
                 product_information = item.find(
                     'p', {'class': 'styles_product-details__2VdYf'}).find_all('span')
@@ -76,17 +76,17 @@ class TacoBellInterface:
                 product_price = float(product_information[0].text.replace('$', ''))
                 product_calories = product_information[1].text
 
-                store_data["menu"][url].append({"item_name": item_name, "information": {
-                    "item_link": item_link, "product_price": product_price, 
-                    "product_calories": product_calories}})
+                store_data["menu"][url].append({"itemName": item_name, "information": {
+                    "itemLink": item_link, "productPrice": product_price, 
+                    "productCalories": product_calories}})
 
                 print(item_name, item_link, product_price, product_calories)
 
-            with open(f"menus/{store_data['store_number']}_menu.json",
-                      'w', encoding='utf-8') as outfile:
-                json.dump(store_data, outfile, indent=4)
+            # with open(f"menus/{store_data['store_number']}_menu.json",
+            #           'w', encoding='utf-8') as outfile:
+            #     json.dump(store_data, outfile, indent=4)
 
-        return "OK"
+        return store_data
 
 
     def get_nearby_stores(self):
@@ -110,17 +110,16 @@ class TacoBellInterface:
         for location in data["nearByStores"][:1]:
 
             meta_data = {
-                "store_number": location["storeNumber"],
-                "phone_number": location["phoneNumber"],
+                "storeNumber": location["storeNumber"],
+                "phoneNumber": location["phoneNumber"],
                 "address": location["address"],
-                "geo_point": location["geoPoint"]
+                "geoPoint": location["geoPoint"]
             }
 
             self.nearby_stores.append(meta_data)
 
         return self.nearby_stores
 
-TBI = TacoBellInterface(37.7749, -122.4194)
-stores = TBI.get_nearby_stores()
-for store in stores[:1]:
-    TBI.get_menu_information(store)
+# TBI = TacoBellInterface(37.710459, -121.8805183)
+# for store in TBI.get_nearby_stores():
+#     print(store)
