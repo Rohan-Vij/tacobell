@@ -37,23 +37,37 @@ def get_menus():
     TBI = TacoBellInterface(latitude, longitude)
     stores = TBI.get_nearby_stores()
 
+    stores_to_get_menus = []
+
     for store in stores:
         if not storemenus.find_one({"storeNumber": store["storeNumber"]}):
-            menu = TBI.get_menu_information(store)
-            menu["lastModified"] = datetime.datetime.now()
+            stores_to_get_menus.append(store)
+        elif storemenus.find_one({"storeNumber": store["storeNumber"]})["lastModified"] < datetime.datetime.now() - datetime.timedelta(months=1):
+            stores_to_get_menus.append(store)
 
-            storemenus.insert_one(menu)
+    if len(stores_to_get_menus) == len(stores):    
+        thread_id = generate(size=21)
 
+        tasks[thread_id] = []
+        tasks[thread_id].append('Getting menus...')
 
-    thread_id = generate(size=21)
+        threading.Thread(target=get_menus_thread, args=(
+            latitude, longitude, thread_id)).start()
 
-    tasks[thread_id] = []
-    tasks[thread_id].append('Getting menus...')
+        return jsonify(message="No menus found in database, getting them now.", thread_id=thread_id), 202
+    else:
+        menus = []
 
-    threading.Thread(target=get_menus_thread, args=(
-        latitude, longitude, thread_id)).start()
+        for store in stores:
+            menus.append(storemenus.find_one({"storeNumber": store["storeNumber"]}))
 
-    return jsonify(thread_id=thread_id), 202
+        if len(stores_to_get_menus) == 0:
+            return jsonify(message='All menus up to date.', data=menus), 200
+        else:
+            threading.Thread(target=get_specific_menus, args=(
+                stores_to_get_menus)).start()
+            
+            return jsonify(message='Some menus up to date.', data=menus), 206
 
 
 @app.route('/task', methods=['GET'])
@@ -96,6 +110,24 @@ def get_menus_thread(latitude, longitude, thread_id):
         storemenus.insert_one(menu)
 
     tasks[thread_id].append('Done!')
+
+def get_specific_menus(meta_datas):
+    """
+    Get the menu for a specific store.
+
+    :param storeNumber: The store number of the store.
+
+    :return: None.
+    """
+
+    for meta_data in meta_datas:
+        TBI = TacoBellInterface(meta_data["latitude"], meta_data["longitude"])
+
+        menu = TBI.get_menu_information(meta_data)
+        menu["lastModified"] = datetime.datetime.now()
+
+        storemenus.insert_one(menu)
+
 
 def update_menus_thread(latitude, longitude):
     TBI = TacoBellInterface(latitude, longitude)

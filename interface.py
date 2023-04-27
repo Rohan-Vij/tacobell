@@ -88,7 +88,6 @@ class TacoBellInterface:
 
         return store_data
 
-
     def get_nearby_stores(self):
         """
         Get the nearby stores for the user.
